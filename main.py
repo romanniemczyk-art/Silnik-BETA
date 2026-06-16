@@ -19,10 +19,25 @@ def check_complexity(n, k, t):
 # ============================================================
 #  BAZA PAMIĘCI (CACHE)
 # ============================================================
+import mysql.connector
+
 def get_db_connection():
-    conn = sqlite3.connect("beta_systemy.db")
+    # Dane połączeniowe (zastąp wartości w cudzysłowie swoimi danymi z IONOS)
+    conn = mysql.connector.connect(
+        host="db5020712101.hosting-data.io",      # np. db12345.hosting-data.io
+        user="dbu1086953",      # np. u12345678
+        password="sierpien.EreN.1968",        # TWOJE HASŁO DO BAZY
+        database="silnik_beta_baza"    # np. db_beta
+    )
+    
     curr = conn.cursor()
-    curr.execute("CREATE TABLE IF NOT EXISTS cache (klucz TEXT PRIMARY KEY, wyniki TEXT)")
+    # W MySQL używamy "IF NOT EXISTS" tak samo jak w SQLite
+    curr.execute("""
+        CREATE TABLE IF NOT EXISTS cache (
+            klucz VARCHAR(255) PRIMARY KEY, 
+            wyniki TEXT
+        )
+    """)
     conn.commit()
     return conn
 
