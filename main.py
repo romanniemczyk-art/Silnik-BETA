@@ -26,7 +26,7 @@ def get_db_connection():
     conn = mysql.connector.connect(
         host="db5020712101.hosting-data.io",      # np. db12345.hosting-data.io
         user="dbu1086953",      # np. u12345678
-        password="sierpien.EreN.1968",        # TWOJE HASŁO DO BAZY
+        password="sierpień.EreN.1968",        # TWOJE HASŁO DO BAZY
         database="silnik_beta_baza"    # np. db_beta
     )
     
