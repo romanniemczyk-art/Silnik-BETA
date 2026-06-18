@@ -60,7 +60,6 @@ def zapisz_surowy_system(v, k, t, max_pct, min_norma, wyniki, status="full"):
 #  SYSTEM JĘZYKÓW & STYL
 # ============================================================
 
-
 if "lang" not in st.session_state:
     st.session_state.lang = "PL"
 
@@ -74,15 +73,30 @@ st.markdown("""
     :root { color-scheme: dark; }
     body { background-color: #0E1117; }
     h1, h2, h3 { color: #4CAF50 !important; }
+    
+    /* Pola input - tło i kolor cyfr */
+    .stNumberInput div[data-baseweb="base-input"] {
+        background-color: #262730 !important;
+        border: 1px solid #4CAF50 !important;
+    }
+    
+    .stNumberInput input {
+        color: #00ffcc !important;
+        font-weight: bold !important;
+        font-size: 20px !important;
+    }
+
     .stButton>button { 
         background-color: #4CAF50 !important; color: white !important; 
         border-radius: 8px !important; width: 100%; height: 50px; font-weight: bold; border: none;
     }
     hr { border: none; border-top: 2px solid #00ffcc !important; margin: 20px 0; }
+    
     .stSlider label, .stSlider div { color: #ffffff !important; }
     .stSlider [data-baseweb="slider"] > div:first-child { background: transparent !important; }
     .stSlider [data-baseweb="slider"] > div > div:first-child { background-color: #ffffff !important; }
     .stSlider [data-baseweb="slider"] [role="slider"] { background-color: #ffffff !important; border: 2px solid #ffffff !important; }
+    
     .ticket-line { 
         font-family: 'Courier New', monospace; font-size: 22px; color: #FFFF00 !important; 
         background-color: #262730; padding: 8px 15px; margin-bottom: 8px; border-radius: 10px;
@@ -93,8 +107,8 @@ st.markdown("""
     .status-value { color: #4CAF50; font-weight: bold; }
     .stTooltipIcon svg { fill: #ff9800 !important; color: #ff9800 !important; }
     .norm-row { background-color: #262730; color: #ffffff; padding: 10px 15px; margin: 5px 0; border-left: 5px solid #FFFF00; font-size: 16px; }
-    .stNumberInput div div input { color: #ffffff !important; font-weight: bold !important; font-size: 20px !important; }
-</style>""", unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
 # LOGIKA KALKULATORA
 def kalkulator_norm(n, k, t):
@@ -103,7 +117,6 @@ def kalkulator_norm(n, k, t):
         norma = math.comb(trafienia, t)
         wyniki.append((trafienia, norma))
     return wyniki
-
 
 #---------------------------------------------------
 # WALIDACJA WEJŚCIA
