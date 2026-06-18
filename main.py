@@ -66,48 +66,125 @@ if "lang" not in st.session_state:
 def T(pl, en):
     return pl if st.session_state.lang == "PL" else en
 
-st.set_page_config(page_title="Maria System - β-Universal PRO", layout="centered")
+st.set_page_config(page_title="Maria System - β-Universal", layout="centered")
 
 st.markdown("""
+
+
 <style>
+
     :root { color-scheme: dark; }
+
     body { background-color: #0E1117; }
+
     h1, h2, h3 { color: #4CAF50 !important; }
+
     
     /* Pola input - tło i kolor cyfr */
     .stNumberInput div[data-baseweb="base-input"] {
         background-color: #262730 !important;
         border: 1px solid #4CAF50 !important;
     }
-    
+
     .stNumberInput input {
-        color: #00ffcc !important;
+        color: #00a2ff !important; /* Zmienione na niebieski */
         font-weight: bold !important;
         font-size: 20px !important;
     }
 
+    /* DODANY ODSTĘP POD POLAMI PARAMETRÓW */
+    div[data-testid="stNumberInputContainer"] {
+        margin-bottom: 20px !important;
+    }
+
+
     .stButton>button { 
-        background-color: #4CAF50 !important; color: white !important; 
-        border-radius: 8px !important; width: 100%; height: 50px; font-weight: bold; border: none;
+        background-color: #4CAF50 !important; 
+        color: white !important; 
+        border-radius: 8px !important; 
+        width: 100%; 
+        height: 50px; 
+        font-weight: bold; 
+        border: none;
     }
-    hr { border: none; border-top: 2px solid #00ffcc !important; margin: 20px 0; }
-    
-    .stSlider label, .stSlider div { color: #ffffff !important; }
-    .stSlider [data-baseweb="slider"] > div:first-child { background: transparent !important; }
-    .stSlider [data-baseweb="slider"] > div > div:first-child { background-color: #ffffff !important; }
-    .stSlider [data-baseweb="slider"] [role="slider"] { background-color: #ffffff !important; border: 2px solid #ffffff !important; }
-    
+
+    hr { 
+        border: none; 
+        border-top: 2px solid #00ffcc !important; 
+        margin: 20px 0; 
+    }
+
+    .stSlider label, 
+    .stSlider div { 
+        color: #ffffff !important; 
+    }
+
+    .stSlider [data-baseweb="slider"] > div:first-child { 
+        background: transparent !important; 
+    }
+
+    .stSlider [data-baseweb="slider"] > div > div:first-child { 
+        background-color: #ffffff !important; 
+    }
+
+    .stSlider [data-baseweb="slider"] [role="slider"] { 
+        background-color: #ffffff !important; 
+        border: 2px solid #ffffff !important; 
+    }
+
     .ticket-line { 
-        font-family: 'Courier New', monospace; font-size: 22px; color: #FFFF00 !important; 
-        background-color: #262730; padding: 8px 15px; margin-bottom: 8px; border-radius: 10px;
-        border-left: 5px solid #FFFF00; font-weight: bold;
+        font-family: 'Courier New', monospace; 
+        font-size: 22px; 
+        color: #FFFF00 !important; 
+        background-color: #262730; 
+        padding: 8px 15px; 
+        margin-bottom: 8px; 
+        border-radius: 10px;
+        border-left: 5px solid #FFFF00; 
+        font-weight: bold;
     }
-    .ticket-number { color: #4CAF50; font-weight: bold; margin-right: 15px; font-size: 16px; }
-    .status-bar { padding: 5px 15px; background: #262730; border-radius: 20px; border-left: 5px solid #00ffcc; font-family: 'Courier New', monospace; font-size: 14px; color: #ffffff; margin-top: 10px; }
-    .status-value { color: #4CAF50; font-weight: bold; }
-    .stTooltipIcon svg { fill: #ff9800 !important; color: #ff9800 !important; }
-    .norm-row { background-color: #262730; color: #ffffff; padding: 10px 15px; margin: 5px 0; border-left: 5px solid #FFFF00; font-size: 16px; }
+
+    .ticket-number { 
+        color: #4CAF50; 
+        font-weight: bold; 
+        margin-right: 15px; 
+        font-size: 16px; 
+    }
+
+    .status-bar { 
+        padding: 5px 15px; 
+        background: #262730; 
+        border-radius: 20px; 
+        border-left: 5px solid #00ffcc; 
+        font-family: 'Courier New', monospace; 
+        font-size: 14px; 
+        color: #ffffff; 
+        margin-top: 10px; 
+    }
+
+    .status-value { 
+        color: #4CAF50; 
+        font-weight: bold; 
+    }
+
+    .stTooltipIcon svg { 
+        fill: #ff9800 !important; 
+        color: #ff9800 !important; 
+    }
+
+    .norm-row { 
+        background-color: #262730; 
+        color: #ffffff; 
+        padding: 10px 15px; 
+        margin: 5px 0; 
+        border-left: 5px solid #FFFF00; 
+        font-size: 16px; 
+    }
+
 </style>
+
+
+
 """, unsafe_allow_html=True)
 
 # LOGIKA KALKULATORA
@@ -149,7 +226,7 @@ def validate_inputs(v, k, t):
 
 
 title_col, lang_col = st.columns([6, 1])
-with title_col: st.title(T("🏗️ Maria System - β-Universal PRO", "🏗️ Maria System - β-Universal PRO"))
+with title_col: st.title(T("Maria System - β-Universal", "Maria System - β-Universal"))
 with lang_col:
     if st.button("PL/EN"): st.session_state.lang = "EN" if st.session_state.lang == "PL" else "PL"
 
