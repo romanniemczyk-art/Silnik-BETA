@@ -4,6 +4,7 @@ import itertools
 import os
 import math
 import json
+import gc
 
 # ============================================================
 #  BRAMKARZ (SECURITY GATE)
@@ -32,21 +33,34 @@ def pobierz_surowy_system(v, k, t, max_pct, min_norma):
     curr = conn.cursor()
     row = curr.execute("SELECT wyniki FROM cache WHERE klucz = ?", (klucz,)).fetchone()
     conn.close()
+    
     if row:
-        return json.loads(row[0])
-    return None
+        dane = json.loads(row[0])
+        # Jeśli dane to słownik, zwracamy wyniki i status
+        if isinstance(dane, dict):
+            return dane.get("wyniki"), dane.get("status", "full")
+        # Jeśli stare dane (tylko lista), traktujemy jako "full"
+        return dane, "full"
+    return None, None
 
-def zapisz_surowy_system(v, k, t, max_pct, min_norma, wyniki):
+def zapisz_surowy_system(v, k, t, max_pct, min_norma, wyniki, status="full"):
     klucz = f"{v}_{k}_{t}_{max_pct}_{min_norma}"
     conn = get_db_connection()
     curr = conn.cursor()
-    curr.execute("INSERT OR REPLACE INTO cache VALUES (?, ?)", (klucz, json.dumps(wyniki)))
+    
+    # Tworzymy słownik z wynikami i statusem
+    dane_do_zapisu = {"wyniki": wyniki, "status": status}
+    
+    curr.execute("INSERT OR REPLACE INTO cache VALUES (?, ?)", (klucz, json.dumps(dane_do_zapisu)))
     conn.commit()
     conn.close()
+
 
 # ============================================================
 #  SYSTEM JĘZYKÓW & STYL
 # ============================================================
+
+
 if "lang" not in st.session_state:
     st.session_state.lang = "PL"
 
@@ -90,8 +104,6 @@ def kalkulator_norm(n, k, t):
         wyniki.append((trafienia, norma))
     return wyniki
 
-
-
 # WALIDACJA WEJŚCIA
 def validate_inputs(v, k, t):
     if v > 80:
@@ -113,9 +125,6 @@ def validate_inputs(v, k, t):
     
     return None
 
-
-
-
 # NAGŁÓWEK
 title_col, lang_col = st.columns([6, 1])
 with title_col: st.title(T("🏗️ Maria System - β-Universal PRO", "🏗️ Maria System - β-Universal PRO"))
@@ -136,7 +145,6 @@ error_msg = validate_inputs(v_pula, k_zaklad, t_gwar)
 if error_msg:
     st.error(error_msg)
 
-
 # TRYB AUTO
 if st.session_state.get("tryb_auto"):
     st.markdown(f"### 🧮 {T('KALKULATOR NORM SYSTEMOWYCH', 'SYSTEM NORM CALCULATOR')}")
@@ -150,8 +158,13 @@ if st.session_state.get("tryb_auto"):
 # FILTRY
 st.subheader(T("🛡️ Filtry optymalizacji pokrycia", "🛡️ Coverage optimization filters"))
 c4, c5a, c5b = st.columns([3, 2, 1])
-with c4: limit_procent = st.slider(T("📊 Współczynnik pokrycia (%)", "📊 Coverage ratio (%)"), 0.0, 100.0, 1.0, step=1.0, help=T("Określa pożądany procentowy stopień pokrycia.", "Specifies the desired coverage ratio."))
-with c5a: limit_norma = st.number_input(T("🛑 Minimalna wymagana Norma", "🛑 Minimum required Norm"), min_value=1, value=1, help=T("Minimalna liczba unikalnych układów gwarantowanych.", "Minimum number of unique guaranteed combinations."))
+with c4: limit_procent = st.slider(T("📊 Współczynnik pokrycia (%)", "📊 Coverage ratio (%)"), 0.0, 100.0, 1.0, step=5.0, help=T("Określa pożądany procentowy stopień pokrycia.", "Specifies the desired coverage ratio."))
+with c5a: 
+    limit_norma = st.number_input(T("🛑 Minimalna wymagana Norma", "🛑 Minimum required Norm"), min_value=1, value=1, help=T("Minimalna liczba unikalnych układów gwarantowanych.", "Minimum number of unique guaranteed combinations."))
+    if limit_norma > math.comb(k_zaklad, t_gwar):
+        st.error(T(f"Błąd: Norma jest za wysoka. Maksymalna norma dla tego systemu to {math.comb(k_zaklad, t_gwar)}.", 
+                   f"Error: Norm is too high. Maximum norm for this system is {math.comb(k_zaklad, t_gwar)}."))
+        st.stop()
 with c5b:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("NORM", help=T("Otwórz kalkulator norm", "Open norm calculator")):
@@ -162,9 +175,8 @@ st.header(T("✍️ Twoje liczby", "✍️ Your numbers"))
 user_numbers_raw = st.text_area(T("Wpisz swoje liczby", "Enter numbers"), help=T("Wpisz własny zestaw liczb.", "Enter your custom numbers."))
 st.markdown("---")
 
-# ============================================================
-#  SILNIK — WERSJA ITERACYJNA (BEZPIECZNA DLA RAM)
-# ============================================================
+
+# SILNIK — WERSJA ITERACYJNA (BEZPIECZNA DLA RAM)
 def build_system(v, k, t, max_pct, min_norma):
     conn = sqlite3.connect(":memory:")
     curr = conn.cursor()
@@ -191,13 +203,12 @@ def build_system(v, k, t, max_pct, min_norma):
             if curr.execute(f"SELECT COUNT(*) FROM cele WHERE kombinacja IN ({placeholders})", sub_combos).fetchone()[0] >= norma:
                 wybrane_zaklady.append(ticket)
 
-		# --- BEZPIECZNIK ---
+                # --- BEZPIECZNIK ---
                 if len(wybrane_zaklady) >= 500:
                     st.warning(T("⚠️ System osiągnął optymalny limit generowania (500 zakładów). Zgodnie z zasadami odpowiedzialnej gry, ograniczyliśmy liczbę kuponów, aby ograniczyć koszt systemu.", 
-                                 "⚠️ Optimal limit of 500 tickets reached. In accordance with responsible gaming principles, we have limited the number of tickets to manage system costs."))
+                                  "⚠️ Optimal limit of 500 tickets reached. In accordance with responsible gaming principles, we have limited the number of tickets to manage system costs."))
                     conn.close(); return wybrane_zaklady
                 # -------------------
-
 
                 curr.execute(f"DELETE FROM cele WHERE kombinacja IN ({placeholders})", sub_combos)
                 covered_count += curr.rowcount
@@ -210,30 +221,30 @@ def build_system(v, k, t, max_pct, min_norma):
                     conn.close(); return wybrane_zaklady
     conn.close(); return wybrane_zaklady
 
+# -------------------------------------------------
 # WYNIKI
+# -------------------------------------------------
+
 if st.button(T("🚀 GENERUJ SYSTEM", "🚀 GENERATE SYSTEM")):
     if error_msg:
         st.error(error_msg)
     else:
-        # 1. BRAMKARZ: Sprawdź złożoność
         HARD_LIMIT = 999_999_999_999_999_999
         score = check_complexity(v_pula, k_zaklad, t_gwar)
         
         if score > HARD_LIMIT:
             st.error(f"❌ {T('System przekracza dopuszczalną złożoność obliczeniową (Score: ', 'System exceeds maximum computational complexity (Score: ')}{score:.0f}). {T('Zmniejsz pulę lub dostosuj parametry.', 'Please reduce the pool or adjust parameters.')}")
         else:
-            # 2. Sprawdź bazę (Cache)
-            res = pobierz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
+            # Pobieramy wyniki oraz status
+            res, status = pobierz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
             
-            if res is not None:
-                st.info(f"Znaleziono bilety: {len(res)}")
-            else:
-                # 3. Brak w bazie - miel silnik
+            if res is None:
                 res = build_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
-                # 4. Zapisz surowy wynik do bazy
-                zapisz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma, res)
+                # Ustalamy status przy zapisie
+                aktualny_status = "ograniczony" if len(res) >= 500 else "full"
+                zapisz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma, res, status=aktualny_status)
+                status = aktualny_status
             
-            # 5. Mapowanie liczb
             if user_numbers_raw:
                 try:
                     u_list = [int(x) for x in user_numbers_raw.replace(",", " ").split()]
@@ -241,13 +252,23 @@ if st.button(T("🚀 GENERUJ SYSTEM", "🚀 GENERATE SYSTEM")):
                         mapping = {i+1: u_list[i] for i in range(v_pula)}
                         res = [tuple(sorted([mapping[n] for n in t])) for t in res]
                 except: st.error("Błąd mapowania!")
-            st.session_state.last_res = res
 
-if "last_res" in st.session_state:
-    for i, t in enumerate(st.session_state.last_res, 1):
-        formatted = " ".join(f"{x:02d}" for x in t)
-        st.markdown(f'<div class="ticket-line"><span class="ticket-number">{i:03d}:</span> {formatted}</div>', unsafe_allow_html=True)
-    st.download_button(label=T("📥 Pobierz system (TXT)", "📥 Download system (TXT)"), data="\n".join([" ".join(f"{x:02d}" for x in t) for t in st.session_state.last_res]), file_name="maria_system.txt", mime="text/plain")
+            # WYŚWIETLANIE I CZYSZCZENIE RAM
+            st.info(f"Znaleziono bilety: {len(res)}")
+            
+            # Ostrzeżenie pojawia się tylko, gdy status to "ograniczony"
+            if status == "ograniczony":
+                st.warning(T("⚠️ System osiągnął optymalny limit generowania (500 zakładów). Zgodnie z zasadami odpowiedzialnej gry, ograniczyliśmy liczbę kuponów, aby ograniczyć koszt systemu.", "⚠️ The system has reached the optimal generation limit (500 bets). In accordance with responsible gaming principles, we have limited the number of tickets to control system costs."))
+            
+            for i, t in enumerate(res, 1):
+                formatted = " ".join(f"{x:02d}" for x in t)
+                st.markdown(f'<div class="ticket-line"><span class="ticket-number">{i:03d}:</span> {formatted}</div>', unsafe_allow_html=True)
+            
+            st.download_button(label=T("📥 Pobierz system (TXT)", "📥 Download system (TXT)"), data="\n".join([" ".join(f"{x:02d}" for x in t) for t in res]), file_name="maria_system.txt", mime="text/plain")
+            
+            del res
+            gc.collect()
+
 
 # OSTRZEŻENIE I STOPKA
 st.markdown(f"""
