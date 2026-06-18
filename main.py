@@ -93,8 +93,8 @@ st.markdown("""
     .status-value { color: #4CAF50; font-weight: bold; }
     .stTooltipIcon svg { fill: #ff9800 !important; color: #ff9800 !important; }
     .norm-row { background-color: #262730; color: #ffffff; padding: 10px 15px; margin: 5px 0; border-left: 5px solid #FFFF00; font-size: 16px; }
-</style>
-""", unsafe_allow_html=True)
+    .stNumberInput div div input { color: #ffffff !important; font-weight: bold !important; font-size: 20px !important; }
+</style>""", unsafe_allow_html=True)
 
 # LOGIKA KALKULATORA
 def kalkulator_norm(n, k, t):
@@ -104,7 +104,12 @@ def kalkulator_norm(n, k, t):
         wyniki.append((trafienia, norma))
     return wyniki
 
+
+#---------------------------------------------------
 # WALIDACJA WEJŚCIA
+#--------------------------------------------------
+
+
 def validate_inputs(v, k, t):
     if v > 80:
         return T("Błąd: Pula (n) nie może przekraczać 80.", "Error: Pool (n) cannot exceed 80.")
@@ -125,7 +130,11 @@ def validate_inputs(v, k, t):
     
     return None
 
+#------------------------------------------------
 # NAGŁÓWEK
+#------------------------------------------------
+
+
 title_col, lang_col = st.columns([6, 1])
 with title_col: st.title(T("🏗️ Maria System - β-Universal PRO", "🏗️ Maria System - β-Universal PRO"))
 with lang_col:
@@ -155,7 +164,12 @@ if st.session_state.get("tryb_auto"):
         st.rerun()
     st.stop()
 
+
+#----------------------------------------------
 # FILTRY
+#----------------------------------------------
+
+
 st.subheader(T("🛡️ Filtry optymalizacji pokrycia", "🛡️ Coverage optimization filters"))
 c4, c5a, c5b = st.columns([3, 2, 1])
 with c4: limit_procent = st.slider(T("📊 Współczynnik pokrycia (%)", "📊 Coverage ratio (%)"), 0.0, 100.0, 1.0, step=5.0, help=T("Określa pożądany procentowy stopień pokrycia.", "Specifies the desired coverage ratio."))
@@ -176,7 +190,11 @@ user_numbers_raw = st.text_area(T("Wpisz swoje liczby", "Enter numbers"), help=T
 st.markdown("---")
 
 
+#----------------------------------------------------------
 # SILNIK — WERSJA ITERACYJNA (BEZPIECZNA DLA RAM)
+#-----------------------------------------------------------
+
+
 def build_system(v, k, t, max_pct, min_norma):
     conn = sqlite3.connect(":memory:")
     curr = conn.cursor()
@@ -203,12 +221,12 @@ def build_system(v, k, t, max_pct, min_norma):
             if curr.execute(f"SELECT COUNT(*) FROM cele WHERE kombinacja IN ({placeholders})", sub_combos).fetchone()[0] >= norma:
                 wybrane_zaklady.append(ticket)
 
+               
                 # --- BEZPIECZNIK ---
                 if len(wybrane_zaklady) >= 500:
-                    st.warning(T("⚠️ System osiągnął optymalny limit generowania (500 zakładów). Zgodnie z zasadami odpowiedzialnej gry, ograniczyliśmy liczbę kuponów, aby ograniczyć koszt systemu.", 
-                                  "⚠️ Optimal limit of 500 tickets reached. In accordance with responsible gaming principles, we have limited the number of tickets to manage system costs."))
-                    conn.close(); return wybrane_zaklady
-                # -------------------
+                    conn.close()
+                    return wybrane_zaklady
+                # -------------------            
 
                 curr.execute(f"DELETE FROM cele WHERE kombinacja IN ({placeholders})", sub_combos)
                 covered_count += curr.rowcount
@@ -269,8 +287,11 @@ if st.button(T("🚀 GENERUJ SYSTEM", "🚀 GENERATE SYSTEM")):
             del res
             gc.collect()
 
-
+#------------------------------------
 # OSTRZEŻENIE I STOPKA
+#-------------------------------------
+
+
 st.markdown(f"""
 <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); border-left: 5px solid #ffd600; padding: 15px; border-radius: 0 10px 10px 0; font-size: 14px; color:#ecf0f1; margin: 30px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <strong>⚠️ {T('Informacja:', 'Note:')}</strong> {T('System służy do celów analitycznych i statystycznych. Nie stanowi porady inwestycyjnej ani gwarancji wyników. Gry losowe wiążą się z ryzykiem.', 'The system is for analytical and statistical purposes only. It does not constitute investment advice or a guarantee of results. Games of chance involve risk.')}
