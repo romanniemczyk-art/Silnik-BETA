@@ -66,7 +66,7 @@ if "lang" not in st.session_state:
 def T(pl, en):
     return pl if st.session_state.lang == "PL" else en
 
-st.set_page_config(page_title="Maria System - β-Universal", layout="centered")
+st.set_page_config(page_title="Maria System β-Universal", layout="centered")
 
 st.markdown("""
 
@@ -80,10 +80,11 @@ st.markdown("""
     h1, h2, h3 { color: #4CAF50 !important; }
 
     
-    /* Pola input - tło i kolor cyfr */
+    /* Pola input - tło i kolor cyfr, BEZ RAMKI */
     .stNumberInput div[data-baseweb="base-input"] {
         background-color: #262730 !important;
-        border: 1px solid #4CAF50 !important;
+        border: none !important;          /* usunięta ramka */
+        box-shadow: none !important;      /* usunięty obrys */
     }
 
     .stNumberInput input {
@@ -185,6 +186,7 @@ st.markdown("""
 
 
 
+
 """, unsafe_allow_html=True)
 
 # LOGIKA KALKULATORA
@@ -226,7 +228,7 @@ def validate_inputs(v, k, t):
 
 
 title_col, lang_col = st.columns([6, 1])
-with title_col: st.title(T("Maria System - β-Universal", "Maria System - β-Universal"))
+with title_col: st.title(T("Maria System β-Universal", "Maria System β-Universal"))
 with lang_col:
     if st.button("PL/EN"): st.session_state.lang = "EN" if st.session_state.lang == "PL" else "PL"
 
