@@ -261,25 +261,38 @@ if st.session_state.get("tryb_auto"):
 # FILTRY
 #----------------------------------------------
 
+st.subheader(T("🛡️ Gwarancja Pokrycia", "🛡️ Coverage Guarantee"))
+c4, c5 = st.columns([3, 2])
 
-st.subheader(T("🛡️ Filtry optymalizacji pokrycia", "🛡️ Coverage optimization filters"))
-c4, c5a, c5b = st.columns([3, 2, 1])
-with c4: limit_procent = st.slider(T("📊 Współczynnik pokrycia (%)", "📊 Coverage ratio (%)"), 0.0, 100.0, 1.0, step=5.0, help=T("Określa pożądany procentowy stopień pokrycia.", "Specifies the desired coverage ratio."))
-with c5a: 
-    limit_norma = st.number_input(T("🛑 Minimalna wymagana Norma", "🛑 Minimum required Norm"), min_value=1, value=1, help=T("Minimalna liczba unikalnych układów gwarantowanych.", "Minimum number of unique guaranteed combinations."))
-    if limit_norma > math.comb(k_zaklad, t_gwar):
-        st.error(T(f"Błąd: Norma jest za wysoka. Maksymalna norma dla tego systemu to {math.comb(k_zaklad, t_gwar)}.", 
-                   f"Error: Norm is too high. Maximum norm for this system is {math.comb(k_zaklad, t_gwar)}."))
-        st.stop()
-with c5b:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("NORM", help=T("Otwórz kalkulator norm", "Open norm calculator")):
-        st.session_state.tryb_auto = True
-        st.rerun()
+with c4: 
+    # Suwak decyduje o tym, jak bardzo "agresywny" jest system (ile % pokrycia chcemy osiągnąć)
+    limit_procent = st.slider(T("📊 Procentowy stopień pokrycia (%)", "📊 Coverage ratio (%)"), 0.0, 100.0, 100.0, step=5.0)
+
+# Używamy Twojej oryginalnej funkcji kalkulator_norm, która wylicza wartości dla t=Gwarancja
+warianty = kalkulator_norm(v_pula, k_zaklad, t_gwar)
+
+with c5:
+    # Tworzymy słownik etykiet, gdzie kluczem jest tekst, a wartością liczba (norma)
+    opcje_wyswietlania = {
+        f"{T('Gwarancja', 'Guarantee')} {t_gwar} {T('przy trafieniu', 'at hit')} {traf} {T('z', 'of')} {v_pula}": n 
+        for traf, n in warianty
+    }
+    
+    # Sortowanie: chcemy, aby najpierw była najbardziej "ekonomiczna" opcja (najmniejsza norma)
+    posortowane_klucze = sorted(opcje_wyswietlania.keys(), key=lambda x: opcje_wyswietlania[x])
+    
+    wybrany_wariant = st.selectbox(
+        T("🎯 Wybierz poziom gwarancji", "🎯 Select guarantee level"),
+        options=posortowane_klucze
+    )
+    
+    # TO JEST KLUCZOWE: limit_norma przekazywana do silnika build_system
+    limit_norma = opcje_wyswietlania[wybrany_wariant]
 
 st.header(T("✍️ Twoje liczby", "✍️ Your numbers"))
 user_numbers_raw = st.text_area(T("Wpisz swoje liczby", "Enter numbers"), help=T("Wpisz własny zestaw liczb.", "Enter your custom numbers."))
 st.markdown("---")
+
 
 
 #----------------------------------------------------------
