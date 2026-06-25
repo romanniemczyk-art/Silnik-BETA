@@ -203,19 +203,19 @@ def kalkulator_norm(n, k, t):
 
 
 def validate_inputs(v, k, t):
-    if v > 80:
-        return T("Błąd: Pula (n) nie może przekraczać 80.", "Error: Pool (n) cannot exceed 80.")
-    if k > 10:
-        return T("Błąd: Zakład (k) nie może przekraczać 10 liczb.", "Error: Ticket (k) cannot exceed 10 numbers.")
-    if t > 9:
-        return T("Błąd: Gwarancja (t) nie może przekraczać 9.", "Error: Guarantee (t) cannot exceed 9.")
+    if v > 50:
+        return T("Błąd: Pula (n) nie może przekraczać 50.", "Error: Pool (n) cannot exceed 50.")
+    if k > 6:
+        return T("Błąd: Zakład (k) nie może przekraczać 6 liczb.", "Error: Ticket (k) cannot exceed 6 numbers.")
+    if t > 6:
+        return T("Błąd: Gwarancja (t) nie może przekraczać 6.", "Error: Guarantee (t) cannot exceed 6.")
     if t > k:
         return T("Błąd: Gwarancja (t) nie może być większa niż liczba liczb w zakładzie (k).", "Error: Guarantee (t) cannot be greater than numbers per ticket (k).")
     if k > v:
         return T("Błąd: Liczba liczb w zakładzie (k) nie może być większa niż Pula (n).", "Error: Numbers per ticket (k) cannot be greater than Pool (n).")
     
     # --- ZDERZAK MATEMATYCZNY ---
-    if math.comb(v, t) > 25_000_000:
+    if math.comb(v, t) > 100_000_000_000:
         st.warning(T(f"⚠️ Uwaga: Zbyt duża złożoność obliczeniowa ({math.comb(v, t):,}). System mógłby zostać zablokowany. Proszę zmniejszyć pulę lub gwarancję.", 
                      f"⚠️ Warning: Complexity too high ({math.comb(v, t):,}). System could be blocked. Please reduce pool or guarantee."))
         return T("Przekroczono limit złożoności.", "Complexity limit exceeded.")
@@ -236,11 +236,11 @@ st.markdown("---")
 st.header(T("⚙️ Konfiguracja systemu", "⚙️ System configuration"))
 c1, c2, c3 = st.columns(3)
 with c1: 
-    v_pula = st.number_input(T("🎲 Pula (n) [max 80]", "🎲 Pool (n) [max 80]"), min_value=1, value=1, step=1, help=T("Całkowita pula liczb dostępnych w systemie (n).", "Total range of numbers available in the pool (n)."))
+    v_pula = st.number_input(T("🎲 Pula (n) [max 50]", "🎲 Pool (n) [max 50]"), min_value=1, value=1, step=1, help=T("Całkowita pula liczb dostępnych w systemie (n).", "Total range of numbers available in the pool (n)."))
 with c2: 
-    k_zaklad = st.number_input(T("🔢 Zakład (k) [max 10]", "🔢 Ticket (k) [max 10]"), min_value=1, value=1, step=1, help=T("Liczba liczb w jednym zakładzie (k).", "Number of balls per ticket (k)."))
+    k_zaklad = st.number_input(T("🔢 Zakład (k) [max 6]", "🔢 Ticket (k) [max 6]"), min_value=1, value=1, step=1, help=T("Liczba liczb w jednym zakładzie (k).", "Number of balls per ticket (k)."))
 with c3: 
-    t_gwar = st.number_input(T("🎯 Gwarancja (t) [max 9]", "🎯 Guarantee (t) [max 9]"), min_value=1, value=1, step=1, help=T("Stopień gwarancji systemu (t) – trafienie minimum t w każdym kuponie.", "System guarantee degree (t) – ensure at least t matches per ticket."))
+    t_gwar = st.number_input(T("🎯 Gwarancja (t) [max 6]", "🎯 Guarantee (t) [max 6]"), min_value=1, value=1, step=1, help=T("Stopień gwarancji systemu (t) – trafienie minimum t w każdym kuponie.", "System guarantee degree (t) – ensure at least t matches per ticket."))
 
 error_msg = validate_inputs(v_pula, k_zaklad, t_gwar)
 if error_msg:
@@ -290,8 +290,10 @@ with c5:
     limit_norma = opcje_wyswietlania[wybrany_wariant]
 
 st.header(T("✍️ Twoje liczby", "✍️ Your numbers"))
-user_numbers_raw = st.text_area(T("Wpisz swoje liczby", "Enter numbers"), help=T("Wpisz własny zestaw liczb.", "Enter your custom numbers."))
+user_numbers_raw = st.text_area(T("Wpisz swoje liczby – po przecinku", "Enter numbers – separated by a comma"), help=T("Wpisz własny zestaw liczb.", "Enter your custom numbers."))
+
 st.markdown("---")
+
 
 
 
@@ -345,52 +347,63 @@ def build_system(v, k, t, max_pct, min_norma):
     conn.close(); return wybrane_zaklady
 
 # -------------------------------------------------
-# WYNIKI
+# WYNIKI - POPRAWIONA WERSJA
 # -------------------------------------------------
 
 if st.button(T("🚀 GENERUJ SYSTEM", "🚀 GENERATE SYSTEM")):
-    if error_msg:
-        st.error(error_msg)
-    else:
-        HARD_LIMIT = 999_999_999_999_999_999
-        score = check_complexity(v_pula, k_zaklad, t_gwar)
-        
-        if score > HARD_LIMIT:
-            st.error(f"❌ {T('System przekracza dopuszczalną złożoność obliczeniową (Score: ', 'System exceeds maximum computational complexity (Score: ')}{score:.0f}). {T('Zmniejsz pulę lub dostosuj parametry.', 'Please reduce the pool or adjust parameters.')}")
-        else:
-            # Pobieramy wyniki oraz status
-            res, status = pobierz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
-            
-            if res is None:
-                res = build_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
-                # Ustalamy status przy zapisie
-                aktualny_status = "ograniczony" if len(res) >= 500 else "full"
-                zapisz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma, res, status=aktualny_status)
-                status = aktualny_status
-            
-            if user_numbers_raw:
-                try:
-                    u_list = [int(x) for x in user_numbers_raw.replace(",", " ").split()]
-                    if len(u_list) >= v_pula:
-                        mapping = {i+1: u_list[i] for i in range(v_pula)}
-                        res = [tuple(sorted([mapping[n] for n in t])) for t in res]
-                except: st.error("Błąd mapowania!")
+    # 1. Walidacja liczb przed uruchomieniem silnika
+    valid_data = True
+    user_numbers = []
+    if user_numbers_raw:
+        try:
+            u_list = [int(x) for x in user_numbers_raw.replace(",", " ").split()]
+            if len(u_list) != v_pula:
+                st.error(f"{T('Błąd: wpisałeś', 'Error: you entered')} {len(u_list)} {T('liczb, a wymagane jest', 'numbers, but required is')} {v_pula}.")
+                valid_data = False
+            else:
+                user_numbers = u_list
+        except:
+            st.error(T("Wpisz tylko liczby całkowite!", "Please enter only integers!"))
+            valid_data = False
 
-            # WYŚWIETLANIE I CZYSZCZENIE RAM
-            st.info(f"Znaleziono bilety: {len(res)}")
+    # 2. Główna logika (tylko jeśli dane są poprawne lub pole było puste)
+    if valid_data:
+        if error_msg:
+            st.error(error_msg)
+        else:
+            HARD_LIMIT = 999_999_999_999_999_999
+            score = check_complexity(v_pula, k_zaklad, t_gwar)
             
-            # Ostrzeżenie pojawia się tylko, gdy status to "ograniczony"
-            if status == "ograniczony":
-                st.warning(T("⚠️ System osiągnął optymalny limit generowania (500 zakładów). Zgodnie z zasadami odpowiedzialnej gry, ograniczyliśmy liczbę kuponów, aby ograniczyć koszt systemu.", "⚠️ The system has reached the optimal generation limit (500 bets). In accordance with responsible gaming principles, we have limited the number of tickets to control system costs."))
-            
-            for i, t in enumerate(res, 1):
-                formatted = " ".join(f"{x:02d}" for x in t)
-                st.markdown(f'<div class="ticket-line"><span class="ticket-number">{i:03d}:</span> {formatted}</div>', unsafe_allow_html=True)
-            
-            st.download_button(label=T("📥 Pobierz system (TXT)", "📥 Download system (TXT)"), data="\n".join([" ".join(f"{x:02d}" for x in t) for t in res]), file_name="maria_system.txt", mime="text/plain")
-            
-            del res
-            gc.collect()
+            if score > HARD_LIMIT:
+                st.error(f"❌ {T('System przekracza dopuszczalną złożoność obliczeniową', 'System exceeds maximum computational complexity')}")
+            else:
+                res, status = pobierz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
+                
+                if res is None:
+                    res = build_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma)
+                    aktualny_status = "ograniczony" if len(res) >= 500 else "full"
+                    zapisz_surowy_system(v_pula, k_zaklad, t_gwar, limit_procent, limit_norma, res, status=aktualny_status)
+                    status = aktualny_status
+                
+                # Mapowanie liczb, jeśli użytkownik wpisał własne
+                if user_numbers:
+                    mapping = {i+1: user_numbers[i] for i in range(v_pula)}
+                    res = [tuple(sorted([mapping[n] for n in t])) for t in res]
+
+                # WYŚWIETLANIE
+                st.info(f"Znaleziono bilety: {len(res)}")
+                if status == "ograniczony":
+                    st.warning(T("⚠️ System osiągnął optymalny limit zakładów. Zgodnie z zasadami odpowiedzialnej gry, ograniczyliśmy liczbę kuponów (max. 500), aby ograniczyć koszt systemu.", "⚠️ Optimal limit of tickets reached. In accordance with responsible gaming principles, we have limited the number of tickets (max. 500) to manage system costs."))
+                
+                for i, t in enumerate(res, 1):
+                    formatted = " ".join(f"{x:02d}" for x in t)
+                    st.markdown(f'<div class="ticket-line"><span class="ticket-number">{i:03d}:</span> {formatted}</div>', unsafe_allow_html=True)
+                
+                st.download_button(label=T("📥 Pobierz system (TXT)", "📥 Download system (TXT)"), data="\n".join([" ".join(f"{x:02d}" for x in t) for t in res]), file_name="maria_system.txt", mime="text/plain")
+                
+                del res
+                gc.collect()
+
 
 #------------------------------------
 # OSTRZEŻENIE I STOPKA
